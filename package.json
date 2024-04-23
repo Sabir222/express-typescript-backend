@@ -2,11 +2,12 @@
   "name": "express-typescript-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rimraf ./build && tsc",
-    "dev": "nodemon ./src/index.ts"
+    "start": "node build/server.js", 
+    "dev": "nodemon"
   },
   "keywords": [],
   "author": "",
