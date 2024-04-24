@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log
+.env
+*.log
+.git
+*.swp
+*.swo
+.*.un~
+*.bak
+*.orig
+.DS_Store
+.vscode
+.idea
+coverage
+build

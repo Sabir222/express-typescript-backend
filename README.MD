@@ -9,7 +9,7 @@
 ### Install Dependencies.
 
 ```plaintext
-npm i express
+npm i express dotenv
 ```
 
 ### Install Dev Dependencies.
