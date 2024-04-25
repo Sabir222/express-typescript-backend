@@ -147,7 +147,7 @@ npm install pg dotenv
 npm i -D @types/pg
 ```
 
-- Add db.ts to /src directory.
+- Add db.ts to /src/config directory.
 
 ```typescript
 import { Pool } from "pg";
@@ -182,17 +182,6 @@ CREATE TABLE users (
 ```
 
 > 📝 You can use PgAdmin4 for easy database management. [PgAdmin](https://www.pgadmin.org/download/).
-
-<!-- - Lets create a route to test our database.
-
-```
-├── src
-│   ├── controller
-│   │   ├── signUpController.ts
-│   ├── routes
-│   │   ├──authRoute.ts
-
-``` -->
 
 # Step three: Implementing Auth using JWT .
 
@@ -232,6 +221,8 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 app.use(helmet());
+app.use(express.json());
+
 
 app.get("/", (req: Request, res: Response) => {
   res.status(200).send("Hello World ");
@@ -242,4 +233,40 @@ app.listen(PORT, () => {
     `🚀 Server ready at ${process.env.SCHEME}://${process.env.HOST}:${process.env.PORT}`
   );
 });
+```
+
+### Adding auth route.
+
+- file structure :
+
+```
+.
+└── src/
+    ├── config/
+    │   └── db.ts
+    ├── features/
+    │   └── auth/
+    │       ├── controllers/
+    │       │   ├── loginController.ts
+    │       │   ├── signUpController.ts
+    │       │   ├── logOutController.ts
+    │       │   ├── refreshController.ts
+    │       │   └── meController.ts
+    │       ├── routes/
+    │       │   └── index.ts
+    │       └── middlewares/
+    │           └── validate.ts
+    └── utils/
+        └── hashPassword.ts
+
+```
+
+- Install auth dependencies
+
+```
+npm i bcrypt zod
+```
+
+```
+npm i -D @types/bcrypt
 ```

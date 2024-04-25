@@ -2,10 +2,12 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cors, { CorsOptions } from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import { authRouter } from "./features/auth/routes";
+
+dotenv.config();
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
-dotenv.config();
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
@@ -23,9 +25,12 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 app.use(helmet());
+app.use(express.json());
+
+app.use("/auth", authRouter);
 
 app.get("/", (req: Request, res: Response) => {
-  res.status(200).send("Hello World ");
+  res.status(200).send("Hello Express Backend ! ");
 });
 
 app.listen(PORT, () => {
