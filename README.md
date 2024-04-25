@@ -147,7 +147,7 @@ npm install pg dotenv
 npm i -D @types/pg
 ```
 
-- Add db.ts to rootDir.
+- Add db.ts to /src directory.
 
 ```typescript
 import { Pool } from "pg";
@@ -193,3 +193,53 @@ CREATE TABLE users (
 │   │   ├──authRoute.ts
 
 ``` -->
+
+# Step three: Implementing Auth using JWT .
+
+Before we start auth lets secure our app first with [cors](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) and [helmet](https://blog.logrocket.com/using-helmet-node-js-secure-application/).
+
+```
+npm i cors helmet
+```
+
+```
+npm i -D @types/cors
+```
+
+```typescript
+import express, { Application, Request, Response, NextFunction } from "express";
+import cors, { CorsOptions } from "cors";
+import helmet from "helmet";
+import dotenv from "dotenv";
+
+const app: Application = express();
+const PORT = process.env.PORT || 5000;
+dotenv.config();
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    const origins = String(process.env.CORS_ORIGIN).split(",");
+    if (!origin || origins.includes(String(origin))) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed."), false);
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+};
+
+app.use(cors(corsOptions));
+app.use(helmet());
+
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).send("Hello World ");
+});
+
+app.listen(PORT, () => {
+  console.log(
+    `🚀 Server ready at ${process.env.SCHEME}://${process.env.HOST}:${process.env.PORT}`
+  );
+});
+```
