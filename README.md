@@ -244,21 +244,21 @@ app.listen(PORT, () => {
     ├── config/
     │   └── db.ts
     ├── features/
-    │   ├── auth/
-    │   ├── controllers/
-    │   │   ├── loginController.ts
-    │   │   ├── signUpController.ts
-    │   │   ├── logOutController.ts
-    │   │   ├── refreshController.ts
-    │   │   └── meController.ts
-    │   ├── routes/
-    │   │   └── index.ts
-    │   ├── validation/
-    │   │   └── signUp.ts
-    │   ├── middlewares/
-    │   │   └── validate.ts
-    │   └── utils/
-    │       └── hashPassword.ts
+    │   └── auth/
+    │       ├── controllers/
+    │       │   ├── loginController.ts
+    │       │   ├── signUpController.ts
+    │       │   ├── logOutController.ts
+    │       │   ├── refreshController.ts
+    │       │   └── meController.ts
+    │       ├── routes/
+    │       │   └── index.ts
+    │       ├── validation/
+    │       │   └── signUp.ts
+    │       ├── middlewares/
+    │       │   └── validate.ts
+    │       └── utils/
+    │           └── hashPassword.ts
     └── server.ts
 ```
 
@@ -267,20 +267,20 @@ app.listen(PORT, () => {
            db.ts
        features/
            auth/
-           controllers/
-             loginController.ts
-             signUpController.ts
-             logOutController.ts
-             refreshController.ts
-             meController.ts
-         routes/
-           index.ts
-         validation/
-           signUp.ts
-         middlewares/
-           validate.ts
-         utils/
-           hashPassword.ts
+               controllers/
+                 loginController.ts
+                 signUpController.ts
+                 logOutController.ts
+                 refreshController.ts
+                 meController.ts
+             routes/
+               index.ts
+             validation/
+               signUp.ts
+             middlewares/
+               validate.ts
+            utils/
+               hashPassword.ts
        server.ts -->
 
 - Install auth dependencies

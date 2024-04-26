@@ -3,6 +3,7 @@ import cors, { CorsOptions } from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import { authRouter } from "./features/auth/routes";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 app.use(helmet());
+app.use(cookieParser());
 app.use(express.json());
 
 app.use("/auth", authRouter);

@@ -53,8 +53,7 @@ export const signUpController = async (req: Request, res: Response) => {
       // res.status(201).send(`User added successfully`);
     }
   } catch (error) {
-    console.log(error);
-    res.status(500).send("error").json(error);
+    res.status(500).json(error);
     return;
   }
 };
