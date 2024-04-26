@@ -234,7 +234,9 @@ app.listen(PORT, () => {
 });
 ```
 
-### Adding auth route.
+### Adding auth routes.
+
+- JWT Auth version using [prisma](https://roll-your-own-auth.vercel.app/jwt/server/express)
 
 - file structure :
 
@@ -283,7 +285,7 @@ app.listen(PORT, () => {
                hashPassword.ts
        server.ts -->
 
-- Install auth dependencies
+- Install auth dependencies.
 
 ```
 npm i bcrypt zod cookie cookie-parser jsonwebtoken
@@ -291,4 +293,425 @@ npm i bcrypt zod cookie cookie-parser jsonwebtoken
 
 ```
 npm i -D @types/bcrypt  @types/cookie @types/cookie-parser @types/jsonwebtoken
+```
+
+- .env file.
+
+```json
+# JWT
+JWT_SECRET="" # Run `openssl rand -base64 32` in your CLI to generate a secret
+JWT_REFRESH_SECRET="" # Run `openssl rand -base64 32` in your CLI to generate a secret
+JWT_EXPIRES_IN=30m
+JWT_REFRESH_EXPIRES_IN=30d
+
+# Server
+NODE_ENV="development"
+HOST="localhost"
+SCHEME="http"
+PORT="4000"
+CORS_ORIGIN="http://localhost:3000,http://localhost:4000"
+
+# Cookie
+ACCESS_TOKEN_COOKIE_NAME=ChooseYourCookieName
+REFRESH_TOKEN_COOKIE_NAME=ChooseYourCookieName_REFRESH
+REFRESH_TOKEN_COOKIE_MAX_AGE=1800000
+ACCESS_TOKEN_COOKIE_MAX_AGE=2592000000
+```
+
+- SignUp controller.
+
+```typescript
+// controllers/signupController.ts
+
+import pool from "../../../config/db";
+import { hashPassword } from "../../../utils/hashPassword";
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+
+export const signUpController = async (req: Request, res: Response) => {
+  const { fullName, email, password } = req.body;
+  console.log(`name: ${fullName} , email : ${email} and password:${password}`);
+
+  const hashedPassword = hashPassword(password);
+
+  try {
+    if (!fullName || !email || !hashedPassword) {
+      res.status(500).send("data missing try again please !");
+      return;
+    } else {
+      const lowerCaseName = fullName.toLowerCase();
+      const lowerCaseEmail = email.toLowerCase();
+      const query = {
+        text: "INSERT INTO users(full_name, email, hashed_password) VALUES($1, $2, $3) RETURNING user_id",
+        values: [lowerCaseName, lowerCaseEmail, hashedPassword],
+      };
+
+      const result = await pool.query(query);
+      const userId = result.rows[0].user_id;
+
+      const access_token = jwt.sign({ id: userId }, process.env.JWT_SECRET!, {
+        expiresIn: process.env.JWT_EXPIRES_IN,
+      });
+
+      const refresh_token = jwt.sign(
+        { id: userId },
+        process.env.JWT_REFRESH_SECRET!,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      );
+
+      res.cookie(process.env.REFRESH_TOKEN_COOKIE_NAME!, refresh_token, {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_MAX_AGE),
+      });
+
+      res.cookie(process.env.ACCESS_TOKEN_COOKIE_NAME!, access_token, {
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_MAX_AGE),
+      });
+
+      return res.json({ access_token }).status(200);
+
+      // res.status(201).send(`User added successfully`);
+    }
+  } catch (error) {
+    res.status(500).json(error);
+    return;
+  }
+};
+
+export default signUpController;
+```
+
+- Login controller.
+
+```typescript
+// controllers/loginController.ts
+
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import pool from "../../../config/db";
+import { comparePassword } from "../../../utils/hashPassword";
+
+const loginController = async (req: Request, res: Response) => {
+  const { user_email, password } = req.body;
+
+  try {
+    const query = {
+      text: "SELECT * FROM users WHERE  email = $1",
+      values: [user_email],
+    };
+    const result = await pool.query(query);
+
+    const { user_id, email, full_name, role, hashed_password } = result.rows[0];
+
+    if (!comparePassword(password, hashed_password)) {
+      return res.json("error pw");
+    }
+
+    const access_token = jwt.sign({ id: user_id }, process.env.JWT_SECRET!, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+
+    const refresh_token = jwt.sign(
+      { id: user_id },
+      process.env.JWT_REFRESH_SECRET!,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+    );
+
+    res.cookie(process.env.REFRESH_TOKEN_COOKIE_NAME!, refresh_token, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_MAX_AGE),
+    });
+
+    res.cookie(process.env.ACCESS_TOKEN_COOKIE_NAME!, access_token, {
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_MAX_AGE),
+    });
+
+    return res.json({ access_token }).status(200);
+  } catch (error) {
+    throw error;
+  }
+};
+
+export default loginController;
+```
+
+- LogoutController.ts.
+
+```typescript
+// controller/logoutController.ts
+
+import { Request, Response } from "express";
+
+const logoutController = async (_req: Request, res: Response) => {
+  res
+    .clearCookie(process.env.REFRESH_TOKEN_COOKIE_NAME!)
+    .clearCookie(process.env.ACCESS_TOKEN_COOKIE_NAME!)
+    .status(200)
+    .end();
+};
+
+export default logoutController;
+```
+
+- Me Controller.ts.
+
+```typescript
+// controller/meController.ts
+
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+import pool from "../../../config/db";
+
+const meController = async (req: Request, res: Response) => {
+  const { SabirAuth } = req.cookies;
+
+  if (!SabirAuth) return res.status(401).json({ message: "Unauthorized!" });
+
+  const decoded: any = jwt.verify(SabirAuth, process.env.JWT_SECRET!);
+
+  const query = {
+    text: "SELECT * FROM users WHERE user_id = $1",
+    values: [decoded.id],
+  };
+
+  const result = await pool.query(query);
+  const { user_id, email, full_name, role, hashed_password } = result.rows[0];
+
+  return res
+    .json({ user_id, email, full_name, role, hashed_password })
+    .status(200);
+};
+export default meController;
+```
+
+- Refresh controller.
+
+```typescript
+// controller/meController.ts
+
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
+
+const refreshController = (req: Request, res: Response) => {
+  const { SabirAuthRefresh } = req.cookies;
+
+  if (!SabirAuthRefresh) {
+    return res.status(400).json({ message: "Refresh token is expired!" });
+  }
+
+  const decoded: any = jwt.verify(
+    SabirAuthRefresh,
+    process.env.JWT_REFRESH_SECRET!
+  );
+
+  const access_token = jwt.sign({ id: decoded.id }, process.env.JWT_SECRET!, {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  });
+
+  const refresh_token = jwt.sign(
+    { id: decoded.id },
+    process.env.JWT_REFRESH_SECRET!,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+  );
+
+  res.cookie(process.env.REFRESH_TOKEN_COOKIE_NAME!, refresh_token, {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_MAX_AGE),
+  });
+
+  res.cookie(process.env.ACCESS_TOKEN_COOKIE_NAME!, access_token, {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_MAX_AGE),
+  });
+
+  return res.json({ access_token }).status(200);
+};
+
+export default refreshController;
+```
+
+- validation middleware.
+
+```typescript
+//  middleware/validate.ts
+
+import { NextFunction, Request, Response } from "express";
+import { AnyZodObject } from "zod";
+
+export const validate =
+  (schema: AnyZodObject) =>
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await schema.parseAsync({
+        body: req.body,
+        query: req.query,
+        params: req.params,
+      });
+      return next();
+    } catch (error) {
+      return res.status(400).json(error);
+    }
+  };
+```
+
+- Encrypting password.
+
+```typescript
+// utils/hashPassword.ts
+
+import bcrypt from "bcrypt";
+
+const saltRounds = 10;
+export const hashPassword = (password: string) => {
+  const salt = bcrypt.genSaltSync(saltRounds);
+  return bcrypt.hashSync(password, salt);
+};
+
+export const comparePassword = (password: string, hash: string) => {
+  return bcrypt.compareSync(password, hash);
+};
+```
+
+- Zod login validation.
+
+```typescript
+// validation/login.ts
+
+import { z } from "zod";
+
+export const loginSchema = z.object({
+  body: z.object({
+    user_email: z
+      .string({
+        required_error: "Email is required",
+      })
+      .email("Not a valid email"),
+    password: z.string({
+      required_error: "Password is required",
+    }),
+  }),
+});
+```
+
+- Zod signUp validation.
+
+```typescript
+// validation/signUp.ts
+
+import { z } from "zod";
+
+export const signupSchema = z.object({
+  body: z.object({
+    fullName: z
+      .string({
+        required_error: "Full name is required",
+      })
+      .min(3, "Name must be at least 3 characters"),
+    email: z
+      .string({
+        required_error: "Email is required",
+      })
+      .email("Not a valid email"),
+    password: z
+      .string({
+        required_error: "Password is required",
+      })
+      .min(8, "Password must be at least 8 chars")
+      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+      .regex(
+        /[!@#$%^&*(),.?":{}|<>]/,
+        "Password must contain at least one symbol"
+      ),
+  }),
+});
+```
+
+- Routes.
+
+```typescript
+// routes/index.ts
+
+import express, { Response, Request } from "express";
+import { validate } from "../middlewares/validate";
+import { loginSchema } from "../validation/login";
+import { signupSchema } from "../validation/signUp";
+import loginController from "../controllers/loginController";
+import signUpController from "../controllers/signupController";
+import meController from "../controllers/meController";
+import logoutController from "../controllers/logoutController";
+import refreshController from "../controllers/refreshController";
+
+loginController;
+const authRouter = express.Router();
+
+authRouter.post("/signup", validate(signupSchema), signUpController);
+authRouter.get("/login", validate(loginSchema), loginController);
+authRouter.get("/me", meController);
+authRouter.get("/logout", logoutController);
+authRouter.get("/refresh", refreshController);
+
+export { authRouter };
+```
+
+- Application server.
+
+```typescript
+// .server.ts
+
+import express, { Application, Request, Response, NextFunction } from "express";
+import cors, { CorsOptions } from "cors";
+import helmet from "helmet";
+import dotenv from "dotenv";
+import { authRouter } from "./features/auth/routes";
+import cookieParser from "cookie-parser";
+
+dotenv.config();
+
+const app: Application = express();
+const PORT = process.env.PORT || 5000;
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    const origins = String(process.env.CORS_ORIGIN).split(",");
+    if (!origin || origins.includes(String(origin))) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed."), false);
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+};
+
+app.use(cors(corsOptions));
+app.use(helmet());
+app.use(cookieParser());
+app.use(express.json());
+
+app.use("/auth", authRouter);
+
+app.get("/", (req: Request, res: Response) => {
+  res.status(200).send("Hello Express Backend ! ");
+});
+
+app.listen(PORT, () => {
+  console.log(
+    `Server running at ${process.env.SCHEME}://${process.env.HOST}:${process.env.PORT}`
+  );
+});
 ```
