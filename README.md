@@ -223,7 +223,6 @@ app.use(cors(corsOptions));
 app.use(helmet());
 app.use(express.json());
 
-
 app.get("/", (req: Request, res: Response) => {
   res.status(200).send("Hello World ");
 });
@@ -245,28 +244,51 @@ app.listen(PORT, () => {
     ├── config/
     │   └── db.ts
     ├── features/
-    │   └── auth/
-    │       ├── controllers/
-    │       │   ├── loginController.ts
-    │       │   ├── signUpController.ts
-    │       │   ├── logOutController.ts
-    │       │   ├── refreshController.ts
-    │       │   └── meController.ts
-    │       ├── routes/
-    │       │   └── index.ts
-    │       └── middlewares/
-    │           └── validate.ts
-    └── utils/
-        └── hashPassword.ts
-
+    │   ├── auth/
+    │   ├── controllers/
+    │   │   ├── loginController.ts
+    │   │   ├── signUpController.ts
+    │   │   ├── logOutController.ts
+    │   │   ├── refreshController.ts
+    │   │   └── meController.ts
+    │   ├── routes/
+    │   │   └── index.ts
+    │   ├── validation/
+    │   │   └── signUp.ts
+    │   ├── middlewares/
+    │   │   └── validate.ts
+    │   └── utils/
+    │       └── hashPassword.ts
+    └── server.ts
 ```
+
+ <!-- src/
+       config/
+           db.ts
+       features/
+           auth/
+           controllers/
+             loginController.ts
+             signUpController.ts
+             logOutController.ts
+             refreshController.ts
+             meController.ts
+         routes/
+           index.ts
+         validation/
+           signUp.ts
+         middlewares/
+           validate.ts
+         utils/
+           hashPassword.ts
+       server.ts -->
 
 - Install auth dependencies
 
 ```
-npm i bcrypt zod
+npm i bcrypt zod cookie cookie-parser jsonwebtoken
 ```
 
 ```
-npm i -D @types/bcrypt
+npm i -D @types/bcrypt  @types/cookie @types/cookie-parser @types/jsonwebtoken
 ```
