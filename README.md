@@ -93,8 +93,6 @@ server running on port 5000
 
 Using PostgreSQL in a Docker container makes it easy to set up and manage your database, and it works smoothly across different setups like development and production.
 
-### Docker PostgreSQL Container Setup.
-
 ### Docker postgres setup.
 
 - Go to docker hub and sign-up : [DockerHub](https://hub.docker.com/_/postgres).
