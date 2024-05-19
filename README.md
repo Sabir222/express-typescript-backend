@@ -8,13 +8,13 @@
 
 ### Install Dependencies.
 
-```plaintext
+```bash
 npm i express
 ```
 
 ### Install Dev Dependencies.
 
-```plaintext
+```bash
 npm i -D @types/express rimraf nodemon typescript ts-node
 ```
 
