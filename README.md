@@ -14,7 +14,7 @@ npm i express
 
 ### Install Dev Dependencies.
 
-```bash
+```plaintext
 npm i -D @types/express rimraf nodemon typescript ts-node
 ```
 
