@@ -131,7 +131,7 @@ psql -U postgres
 
 ```
 
-### Link Database with express App.
+### Link Database with the express App.
 
 - Install pg and dotenv.
 
