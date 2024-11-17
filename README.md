@@ -1,6 +1,6 @@
 # First step : Express + typescript setup.
 
-- Create your project repository on github..
+- Create your project repository on github.
 - clone your repo and cd to it.
 - Run `npm init -y`.
 
