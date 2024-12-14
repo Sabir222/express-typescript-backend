@@ -1,4 +1,4 @@
-# First step : Express + typescript setup..
+# First step : Express + typescript setup.
 
 - Create your project repository on github.
 - clone your repo and cd to it.
